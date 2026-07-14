@@ -37,4 +37,55 @@ While implementing this change, I also discovered `WatchlistEntry` was missing a
 **How I verified no conflict remains:** Ran `git status` after resolving to confirm a clean working tree with no unmerged paths, and confirmed `git rebase` reported "Successfully rebased." Then ran the full test suite (`pytest tests/ -v`) — all 8 tests passed, confirming the UUID type change didn't break the watchlist feature, including the deduplication logic and sort order added in earlier comments.
 
 ## PR Description
-<!-- Written at the end — feature overview, design decisions, manual testing steps -->
+<!## Watchlist Feature
+
+Adds the ability for users to save films they want to watch later, separate from their collection (films already watched).
+
+### What it does
+- `POST /watchlist/<user_id>/add` — adds a film to a user's watchlist, given a `film_id` in the request body
+- `GET /watchlist/<user_id>` — returns all films on a user's watchlist, sorted by most recently added
+- Prevents duplicate entries: adding a film already on the watchlist returns an error instead of creating a second entry
+- Validates that the film exists before adding it to the watchlist
+
+### Design decisions
+
+**Default visibility (`public`):** Watchlist entries default to `public=False`. CineLog is a community app, which implies social/discovery features are likely (e.g., browsing others' watchlists) — but a user's very first watchlist entry is often added before they've explored privacy settings, so public-by-default would expose users at their most vulnerable, least-informed moment. Defaulting to private makes sharing a deliberate opt-in choice. Tradeoff: this adds friction to any social/discovery feature that depends on watchlists being visible by default.
+
+**Sort order:** Watchlist entries are sorted by `date_added` descending (most recent first), rather than alphabetically. A watchlist functions more like a short-term queue of things a user is planning to watch soon — usually the most relevant entry is whatever was just added — rather than a long reference list someone needs to search through alphabetically.
+
+### Manual testing
+
+1. Start the app:
+```bash
+   python app.py
+```
+
+2. Create a user and a film first via the existing collection endpoints, or use existing seed data, to get a real `user_id` and `film_id` (both UUIDs).
+
+3. Add a film to the watchlist:
+```bash
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_id>"}'
+```
+   Expected: `201 Created`, response body is the new watchlist entry.
+
+4. Try adding the same film again (should be rejected as a duplicate):
+```bash
+   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+     -H "Content-Type: application/json" \
+     -d '{"film_id": "<film_id>"}'
+```
+   Expected: an error response (not a second entry).
+
+5. View the watchlist:
+```bash
+   curl http://127.0.0.1:5000/watchlist/<user_id>
+```
+   Expected: a JSON list of films, most recently added first.
+
+6. Automated tests:
+```bash
+   pytest tests/ -v
+```
+   Expected: all 8 tests pass.-- Written at the end — feature overview, design decisions, manual testing steps -->
