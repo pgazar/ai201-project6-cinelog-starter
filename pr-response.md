@@ -1,5 +1,12 @@
 # PR Response Doc — CineLog Watchlist Feature
 
+## AI Usage
+I used Claude throughout this project for orientation and verification, not for writing my design decisions directly. Specific uses:
+- Asked Claude to explain `add_to_collection()` line by line before writing the equivalent deduplication logic in `add_to_watchlist()`, so I understood the guard-clause pattern rather than copying it blindly.
+- Used Claude to help debug a genuine pre-existing bug in the starter code: `WatchlistEntry` was missing a `film` relationship in `models.py`, which caused `get_watchlist()` to fail with an `AttributeError`. Claude helped me trace the error to the missing relationship by comparing against how `Film`/`CollectionEntry` handled it.
+- For Comment 4 (default visibility) and Comment 5 (sort order), I formed my own position first, then used Claude to help me sharpen and structure my reasoning into the pr-response.md format — the underlying arguments (e.g., a new user's first watchlist entry being their most vulnerable, least-informed moment; a watchlist behaving like a queue rather than a reference list) were mine.
+- Used Claude to talk through the interactive rebase and conflict resolution step by step, since I hadn't done a UUID-type merge conflict before, but I resolved the actual conflicting code myself.
+
 ## Comment 1 — Rename
 **What I did:** Renamed `save_to_watchlist()` to `add_to_watchlist()` in `services/watchlist_service.py` to follow the project's `verb_to_noun` naming convention already used by `add_to_collection()`. Updated both the import and the function call in `routes/watchlist/watchlist.py`.
 **How I verified:** Ran `grep -ri "save_to_watchlist" --include="*.py" .` before and after the change — found 3 occurrences (the definition, an import, and a call site), and confirmed the search returned zero results after the rename, meaning no call sites were missed. Also ran the full test suite (`pytest tests/ -v`) to confirm no regressions.
@@ -14,7 +21,7 @@
 
 ## Comment 4 — Default visibility
 **My position:** Watchlist entries should default to `public=False` rather than `public=True`.
-**Reasoning:** CineLog is described as a community film tracking app, which suggests a social feature is planned or likely,for example, people browsing what others want to watch. But a new user's very first watchlist entry is often added before they've explored privacy settings at all, which means public-by-default exposes that user at exactly the moment they're least prepared for it. A watchlist can also be more revealing than a "watched" history, since it shows present interest or curiosity rather than something already completed and settled. Defaulting to private protects users during that vulnerable first-use moment, and makes sharing a deliberate, informed choice rather than something they inherited without noticing.
+**Reasoning:** CineLog is described as a community film tracking app, which suggests a social feature is planned or likely, for example, people browsing what others want to watch. But a new user's very first watchlist entry is often added before they've explored privacy settings at all, which means public-by-default exposes that user at exactly the moment they're least prepared for it. A watchlist can also be more revealing than a "watched" history, since it shows present interest or curiosity rather than something already completed and settled. Defaulting to private protects users during that vulnerable first-use moment, and makes sharing a deliberate, informed choice rather than something they inherited without noticing.
 **Tradeoff acknowledged:** Defaulting to private weakens the social/discovery experience out of the box — if friends seeing each other's watchlists is meant to be a core feature, requiring users to manually opt in per entry (or in account settings) adds friction that could reduce engagement with that feature. I think this tradeoff is worth it: protecting a new user's privacy by default matters more than frictionless discovery for users who haven't yet decided they want to be seen.
 
 ## Comment 5 — Sort order
@@ -34,7 +41,8 @@ While implementing this change, I also discovered `WatchlistEntry` was missing a
 **How I verified no conflict remains:** Ran `git status` after resolving to confirm a clean working tree with no unmerged paths, and confirmed `git rebase` reported "Successfully rebased." Then ran the full test suite (`pytest tests/ -v`) — all 8 tests passed, confirming the UUID type change didn't break the watchlist feature, including the deduplication logic and sort order added in earlier comments.
 
 ## PR Description
-<!## Watchlist Feature
+
+## Watchlist Feature
 
 Adds the ability for users to save films they want to watch later, separate from their collection (films already watched).
 
@@ -54,42 +62,39 @@ Adds the ability for users to save films they want to watch later, separate from
 
 1. Start the app:
 ```bash
-   python app.py
+python app.py
 ```
 
 2. Create a user and a film first via the existing collection endpoints, or use existing seed data, to get a real `user_id` and `film_id` (both UUIDs).
 
 3. Add a film to the watchlist:
 ```bash
-   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
-     -H "Content-Type: application/json" \
-     -d '{"film_id": "<film_id>"}'
+curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+  -H "Content-Type: application/json" \
+  -d '{"film_id": "<film_id>"}'
 ```
-   Expected: `201 Created`, response body is the new watchlist entry.
+Expected: `201 Created`, response body is the new watchlist entry.
 
 4. Try adding the same film again (should be rejected as a duplicate):
 ```bash
-   curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
-     -H "Content-Type: application/json" \
-     -d '{"film_id": "<film_id>"}'
+curl -X POST http://127.0.0.1:5000/watchlist/<user_id>/add \
+  -H "Content-Type: application/json" \
+  -d '{"film_id": "<film_id>"}'
 ```
-   Expected: an error response (not a second entry).
+Expected: an error response (not a second entry).
 
 5. View the watchlist:
 ```bash
-   curl http://127.0.0.1:5000/watchlist/<user_id>
+curl http://127.0.0.1:5000/watchlist/<user_id>
 ```
-   Expected: a JSON list of films, most recently added first.
+Expected: a JSON list of films, most recently added first.
 
 6. Automated tests:
 ```bash
-   pytest tests/ -v
+pytest tests/ -v
 ```
-   Expected: all 8 tests pass.-- Written at the end — feature overview, design decisions, manual testing steps -->
+Expected: all 8 tests pass.
 
-## AI Usage
-I used Claude throughout this project for orientation and verification, not for writing my design decisions directly. Specific uses:
-- Asked Claude to explain `add_to_collection()` line by line before writing the equivalent deduplication logic in `add_to_watchlist()`, so I understood the guard-clause pattern rather than copying it blindly.
-- Used Claude to help debug a genuine pre-existing bug in the starter code: `WatchlistEntry` was missing a `film` relationship in `models.py`, which caused `get_watchlist()` to fail with an `AttributeError`. Claude helped me trace the error to the missing relationship by comparing against how `Film`/`CollectionEntry` handled it.
-- For Comment 4 (default visibility) and Comment 5 (sort order), I formed my own position first, then used Claude to help me sharpen and structure my reasoning into the pr-response.md format — the underlying arguments (e.g., a new user's first watchlist entry being their most vulnerable, least-informed moment; a watchlist behaving like a queue rather than a reference list) were mine.
-- Used Claude to talk through the interactive rebase and conflict resolution step by step, since I hadn't done a UUID-type merge conflict before, but I resolved the actual conflicting code myself.
+## Commit History Screenshot
+
+![git log output showing 12 conventional commits with no merge commits](commit-history.png)
