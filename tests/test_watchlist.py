@@ -1,23 +1,18 @@
 """
-tests/test_collection.py — CineLog
+tests/test_watchlist.py — CineLog
 
-Tests for the collection service.
-These tests demonstrate the patterns used across the codebase — read them
-before writing your own tests for the watchlist feature (see Comment 4).
+Tests for the watchlist service.
 """
 
 import pytest
 from app import create_app, db
-from models import User, Film, CollectionEntry
-from services.collection_service import (
-    add_to_collection,
-    remove_from_collection,
-    get_collection,
-    FilmNotFoundError,
-    AlreadyInCollectionError,
-    NotInCollectionError,
+from models import User, Film, WatchlistEntry
+from services.watchlist_service import (
+    add_to_watchlist,
+    get_watchlist,
+    AlreadyInWatchlistError,
 )
-
+from services.collection_service import FilmNotFoundError
 
 
 @pytest.fixture
@@ -56,19 +51,18 @@ def sample_film(app):
 
 # ── Basic add ───────────────────────────────────────────────────────────────
 
-def test_add_to_collection_creates_entry(app, sample_user, sample_film):
+def test_add_to_watchlist_creates_entry(app, sample_user, sample_film):
     """
-    Adding a valid film should create a CollectionEntry in the database.
+    Adding a valid film should create a WatchlistEntry in the database.
     """
     with app.app_context():
-        entry = add_to_collection(user_id=sample_user, film_id=sample_film)
+        entry = add_to_watchlist(user_id=sample_user, film_id=sample_film)
 
         assert entry is not None
         assert entry.user_id == sample_user
         assert entry.film_id == sample_film
 
-        # Verify it persisted
-        in_db = CollectionEntry.query.filter_by(
+        in_db = WatchlistEntry.query.filter_by(
             user_id=sample_user, film_id=sample_film
         ).first()
         assert in_db is not None
@@ -76,19 +70,18 @@ def test_add_to_collection_creates_entry(app, sample_user, sample_film):
 
 # ── Deduplication ────────────────────────────────────────────────────────────
 
-def test_add_to_collection_duplicate_raises(app, sample_user, sample_film):
+def test_add_to_watchlist_duplicate_raises(app, sample_user, sample_film):
     """
-    Adding the same film twice should raise AlreadyInCollectionError,
+    Adding the same film twice should raise AlreadyInWatchlistError,
     not silently create a duplicate entry.
     """
     with app.app_context():
-        add_to_collection(user_id=sample_user, film_id=sample_film)
+        add_to_watchlist(user_id=sample_user, film_id=sample_film)
 
-        with pytest.raises(AlreadyInCollectionError):
-            add_to_collection(user_id=sample_user, film_id=sample_film)
+        with pytest.raises(AlreadyInWatchlistError):
+            add_to_watchlist(user_id=sample_user, film_id=sample_film)
 
-        # Confirm only one entry exists
-        count = CollectionEntry.query.filter_by(
+        count = WatchlistEntry.query.filter_by(
             user_id=sample_user, film_id=sample_film
         ).count()
         assert count == 1
@@ -96,7 +89,7 @@ def test_add_to_collection_duplicate_raises(app, sample_user, sample_film):
 
 # ── Nonexistent film ─────────────────────────────────────────────────────────
 
-def test_add_to_collection_nonexistent_film_raises(app, sample_user):
+def test_add_to_watchlist_nonexistent_film_raises(app, sample_user):
     """
     Adding a film_id that doesn't exist in the database should raise
     FilmNotFoundError, not a database integrity error.
@@ -105,19 +98,18 @@ def test_add_to_collection_nonexistent_film_raises(app, sample_user):
         fake_film_id = "00000000-0000-0000-0000-000000000000"
 
         with pytest.raises(FilmNotFoundError):
-            add_to_collection(user_id=sample_user, film_id=fake_film_id)
+            add_to_watchlist(user_id=sample_user, film_id=fake_film_id)
 
+# ── get_watchlist sort order ─────────────────────────────────────────────────
 
-# ── get_collection sort order ────────────────────────────────────────────────
-
-def test_get_collection_returns_newest_first(app, sample_user):
+def test_get_watchlist_returns_newest_first(app, sample_user):
     """
-    get_collection() should return films sorted by date_added descending
+    get_watchlist() should return films sorted by date_added descending
     (most recently added first).
     """
     with app.app_context():
         from datetime import datetime, timezone, timedelta
-        from models import Film, CollectionEntry
+        from models import Film, WatchlistEntry
 
         film_a = Film(title="Alien", year=1979, genre="Horror")
         film_b = Film(title="Blade Runner", year=1982, genre="Sci-Fi")
@@ -127,13 +119,13 @@ def test_get_collection_returns_newest_first(app, sample_user):
         earlier = datetime.now(timezone.utc) - timedelta(days=5)
         later = datetime.now(timezone.utc)
 
-        entry_a = CollectionEntry(user_id=sample_user, film_id=film_a.id, date_added=earlier)
-        entry_b = CollectionEntry(user_id=sample_user, film_id=film_b.id, date_added=later)
+        entry_a = WatchlistEntry(user_id=sample_user, film_id=film_a.id, date_added=earlier)
+        entry_b = WatchlistEntry(user_id=sample_user, film_id=film_b.id, date_added=later)
         db.session.add_all([entry_a, entry_b])
         db.session.commit()
 
-        collection = get_collection(sample_user)
-        titles = [f["title"] for f in collection]
+        watchlist = get_watchlist(sample_user)
+        titles = [f["title"] for f in watchlist]
 
         # Blade Runner was added later, so it should come first
         assert titles[0] == "Blade Runner"
