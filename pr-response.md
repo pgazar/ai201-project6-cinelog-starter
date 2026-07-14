@@ -1,8 +1,5 @@
 # PR Response Doc — CineLog Watchlist Feature
 
-## AI Usage
-<!-- Fill in at the end — how you used AI tools during this project -->
-
 ## Comment 1 — Rename
 **What I did:** Renamed `save_to_watchlist()` to `add_to_watchlist()` in `services/watchlist_service.py` to follow the project's `verb_to_noun` naming convention already used by `add_to_collection()`. Updated both the import and the function call in `routes/watchlist/watchlist.py`.
 **How I verified:** Ran `grep -ri "save_to_watchlist" --include="*.py" .` before and after the change — found 3 occurrences (the definition, an import, and a call site), and confirmed the search returned zero results after the rename, meaning no call sites were missed. Also ran the full test suite (`pytest tests/ -v`) to confirm no regressions.
