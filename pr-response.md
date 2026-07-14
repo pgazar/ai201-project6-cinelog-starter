@@ -16,9 +16,9 @@
 **How I verified:** Ran `pytest tests/ -v` — all 7 tests pass (4 existing collection tests + 3 new watchlist tests), confirming the new tests are correctly written and the underlying logic they test is working.
 
 ## Comment 4 — Default visibility
-**My position:**
-**Reasoning:**
-**Tradeoff acknowledged:**
+**My position:** Watchlist entries should default to `public=False` rather than `public=True`.
+**Reasoning:** CineLog is described as a community film tracking app, which suggests a social feature is planned or likely,for example, people browsing what others want to watch. But a new user's very first watchlist entry is often added before they've explored privacy settings at all, which means public-by-default exposes that user at exactly the moment they're least prepared for it. A watchlist can also be more revealing than a "watched" history, since it shows present interest or curiosity rather than something already completed and settled. Defaulting to private protects users during that vulnerable first-use moment, and makes sharing a deliberate, informed choice rather than something they inherited without noticing.
+**Tradeoff acknowledged:** Defaulting to private weakens the social/discovery experience out of the box — if friends seeing each other's watchlists is meant to be a core feature, requiring users to manually opt in per entry (or in account settings) adds friction that could reduce engagement with that feature. I think this tradeoff is worth it: protecting a new user's privacy by default matters more than frictionless discovery for users who haven't yet decided they want to be seen.
 
 ## Comment 5 — Sort order
 **My position:**
