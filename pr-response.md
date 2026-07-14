@@ -28,9 +28,13 @@
 While implementing this change, I also discovered `WatchlistEntry` was missing a `film` relationship in `models.py` (present on the analogous `CollectionEntry` pattern), which caused `get_watchlist()` to fail with an `AttributeError`. I added the missing relationship as part of this fix.
 
 ## Comment 6 — Rebase
-**What conflicted:**
-**How I resolved it:**
-**How I verified no conflict remains:**
+**What conflicted:** Two files conflicted during `git rebase origin/main`:
+1. `.gitignore` — both branches independently added a `.gitignore` file. My version was missing a `.pytest_cache/` entry that main's version had; I kept both sets of ignore patterns.
+2. `models.py` — main's refactor (`07ca580`) migrated `Film.id` and `CollectionEntry.film_id` from `Integer` to a UUID string (`db.String(36)`). My `WatchlistEntry` class didn't exist on main, so the conflict was an add-only conflict rather than competing edits. I kept my full `WatchlistEntry` class but changed its `film_id` column from `db.Integer` to `db.String(36)` to match the new `Film.id` type.
+
+**How I resolved it:** For `.gitignore`, I merged both versions by keeping every ignore pattern from each side. For `models.py`, I kept my `WatchlistEntry` class definition intact and only changed the `film_id` column type to match the refactored `Film.id` type. I also checked `services/watchlist_service.py` for any code that assumed `film_id` was an integer (e.g., type conversions or arithmetic) and confirmed there was none — the function treats `film_id` as an opaque value throughout, so no logic changes were needed there.
+
+**How I verified no conflict remains:** Ran `git status` after resolving to confirm a clean working tree with no unmerged paths, and confirmed `git rebase` reported "Successfully rebased." Then ran the full test suite (`pytest tests/ -v`) — all 8 tests passed, confirming the UUID type change didn't break the watchlist feature, including the deduplication logic and sort order added in earlier comments.
 
 ## PR Description
 <!-- Written at the end — feature overview, design decisions, manual testing steps -->
