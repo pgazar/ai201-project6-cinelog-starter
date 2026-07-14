@@ -89,3 +89,10 @@ Adds the ability for users to save films they want to watch later, separate from
    pytest tests/ -v
 ```
    Expected: all 8 tests pass.-- Written at the end — feature overview, design decisions, manual testing steps -->
+
+## AI Usage
+I used Claude throughout this project for orientation and verification, not for writing my design decisions directly. Specific uses:
+- Asked Claude to explain `add_to_collection()` line by line before writing the equivalent deduplication logic in `add_to_watchlist()`, so I understood the guard-clause pattern rather than copying it blindly.
+- Used Claude to help debug a genuine pre-existing bug in the starter code: `WatchlistEntry` was missing a `film` relationship in `models.py`, which caused `get_watchlist()` to fail with an `AttributeError`. Claude helped me trace the error to the missing relationship by comparing against how `Film`/`CollectionEntry` handled it.
+- For Comment 4 (default visibility) and Comment 5 (sort order), I formed my own position first, then used Claude to help me sharpen and structure my reasoning into the pr-response.md format — the underlying arguments (e.g., a new user's first watchlist entry being their most vulnerable, least-informed moment; a watchlist behaving like a queue rather than a reference list) were mine.
+- Used Claude to talk through the interactive rebase and conflict resolution step by step, since I hadn't done a UUID-type merge conflict before, but I resolved the actual conflicting code myself.
