@@ -21,9 +21,11 @@
 **Tradeoff acknowledged:** Defaulting to private weakens the social/discovery experience out of the box — if friends seeing each other's watchlists is meant to be a core feature, requiring users to manually opt in per entry (or in account settings) adds friction that could reduce engagement with that feature. I think this tradeoff is worth it: protecting a new user's privacy by default matters more than frictionless discovery for users who haven't yet decided they want to be seen.
 
 ## Comment 5 — Sort order
-**My position:**
-**Reasoning:**
-**Engagement with reviewer's point:**
+**My position:** I agree with defaulting to date-added order (most recent first) instead of alphabetical.
+**Reasoning:** A watchlist is something you check when you're deciding what to watch soon — and what you're most likely to want to watch next is often whatever you just added, since that's usually why you added it in the first place. Alphabetical order would only really help someone scanning a long list to find a specific title they remember, but most users' watchlists are not long enough for that to matter. For a short, actively-used list, recency is more useful than alphabetical order.
+**Engagement with reviewer's point:** Dev-lead's reasoning — "most users want to see what they added recently" — matches how I think people actually use a watchlist: as a short-term queue of things they're planning to watch soon, not a long reference list they need to search through. I don't see a strong case for alphabetical here, since it optimizes for a scenario (searching a large list) that doesn't match typical watchlist size or use.
+
+While implementing this change, I also discovered `WatchlistEntry` was missing a `film` relationship in `models.py` (present on the analogous `CollectionEntry` pattern), which caused `get_watchlist()` to fail with an `AttributeError`. I added the missing relationship as part of this fix.
 
 ## Comment 6 — Rebase
 **What conflicted:**

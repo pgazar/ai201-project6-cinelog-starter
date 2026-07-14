@@ -19,6 +19,7 @@ from services.collection_service import (
 )
 
 
+
 @pytest.fixture
 def app():
     """Create an isolated test app with an in-memory database."""
